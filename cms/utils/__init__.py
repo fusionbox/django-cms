@@ -43,9 +43,7 @@ def get_language_from_request(request, current_page=None):
     Return the most obvious language according the request
     """
     language = None
-    if hasattr(request, 'POST'):
-        language = request.POST.get('language', None)
-    if hasattr(request, 'GET') and not language:
+    if hasattr(request, 'GET'):
         language = request.GET.get('language', None)
     site_id = current_page.site_id if current_page else None
     if language:
