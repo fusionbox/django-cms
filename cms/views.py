@@ -113,10 +113,7 @@ def details(request, slug):
                         # In the case where the page is not available in the
                     # preferred language, *redirect* to the fallback page. This
                     # is a design decision (instead of rendering in place)).
-                    if (hasattr(request, 'toolbar') and request.user.is_staff
-                            and request.toolbar.edit_mode):
-                        request.toolbar.redirect_url = path
-                    elif path not in own_urls:
+                    if path not in own_urls:
                         return HttpResponseRedirect(path)
                 else:
                     found = True
