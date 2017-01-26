@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict, defaultdict
 
+from django.conf import settings
 from django.contrib.sites.models import Site
 from django.db.models.signals import post_save, post_delete
 from django.utils.html import escape
@@ -37,6 +38,10 @@ def update_site_and_page_choices(lang=None):
     except LanguageError:
         fallbacks = []
     language_order = [lang] + fallbacks
+
+    default_lang = getattr(settings, 'DEFAULT_LANGUAGE', settings.LANGUAGES[0][0])
+    if default_lang not in language_order:
+        language_order.append(default_lang)
 
     for sitepk, sitename in sites.items():
         site_choices.append((sitepk, sitename))
