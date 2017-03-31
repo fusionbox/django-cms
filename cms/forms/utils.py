@@ -15,6 +15,35 @@ from cms.models import Page, Title
 from cms.utils import i18n
 
 
+# We want all pages on all sites to be available in the PageField dropdown.
+# The easiest way to do this is to find all the languages that aren't already in language_order
+# and then append them to language_order.
+# But the order of the extra languages appended to language_order is important, as it will
+# determine the language used to display the page title in the PageField dropdown.
+# In particular, if we're on a site whose languages are [en-us, es-mx] and we're linking to a site
+# whose languages are [en-gb, es, fr, and pt], we want to display the en-gb title for the page if it
+# exists (because the first language of the site we're linking from is en-us), and if not we display
+# the es title if it exists, and only then display the fr or pt title.
+# This code sorts to the required ordering.
+def get_expanded_language_order(language_order):
+    all_languages = set(l[0] for l in settings.LANGUAGES)
+    non_site_languages = all_languages.difference(language_order)
+
+    def get_base_language(lang):
+        return lang.split('-')[0]
+
+    language_order_bases = [get_base_language(l) for l in language_order]
+
+    def position_of_base_in_language_order(lang):
+        lang_base = get_base_language(lang)
+        for i, base in enumerate(language_order_bases):
+            if base == lang_base:
+                return i
+        return len(language_order)  # If not found, return one past the end so sorting will work
+
+    return language_order + sorted(non_site_languages, key=position_of_base_in_language_order)
+
+
 def update_site_and_page_choices(lang=None):
     lang = lang or i18n.get_current_language()
     SITE_CHOICES_KEY = _site_cache_key(lang)
@@ -39,9 +68,7 @@ def update_site_and_page_choices(lang=None):
         fallbacks = []
     language_order = [lang] + fallbacks
 
-    default_lang = getattr(settings, 'DEFAULT_LANGUAGE', settings.LANGUAGES[0][0])
-    if default_lang not in language_order:
-        language_order.append(default_lang)
+    language_order = get_expanded_language_order(language_order)
 
     for sitepk, sitename in sites.items():
         site_choices.append((sitepk, sitename))
